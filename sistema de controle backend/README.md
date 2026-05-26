@@ -64,6 +64,24 @@ Para iniciar o servidor, execute o seguinte comando:
  
 npm start
 
+# 5. Backup diário do banco
+O script [backup_controle_leite.sh](backup_controle_leite.sh) gera um dump compactado do banco `controle_leite` usando as variáveis do arquivo `.env`.
+
+Exemplo de execução manual:
+
+```bash
+chmod +x backup_controle_leite.sh
+./backup_controle_leite.sh
+```
+
+Exemplo de agendamento no cron para rodar todos os dias às 2h:
+
+```cron
+0 2 * * * cd /caminho/do/projeto/sistema\ de\ controle\ backend && ./backup_controle_leite.sh >> backups/backup.log 2>&1
+```
+
+Se preferir guardar os arquivos em outro local, defina `BACKUP_DIR` antes de executar o script.
+
 # 📖 Rotas da API
 ### Produtores: 
 
