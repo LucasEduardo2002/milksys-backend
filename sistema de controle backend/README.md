@@ -64,6 +64,24 @@ Para iniciar o servidor, execute o seguinte comando:
  
 npm start
 
+# 5. Deploy simples sem Nginx
+
+Se a intenção for subir o sistema em um servidor da empresa sem usar Nginx, siga este fluxo:
+
+1. Configure o arquivo `.env` com MySQL, `SESSION_SECRET`, `FRONTEND_ORIGIN`, `PORT=3001` e `NODE_ENV=production`.
+2. Gere o build do frontend com `npm run build` no diretório do frontend.
+3. Inicie o backend e o frontend com PM2, mantendo o frontend no modo `vite preview` na porta `4173`.
+
+Exemplo de comandos:
+
+```bash
+pm2 start server.js --name sertao-backend --cwd "sistema de controle backend"
+pm2 start "npm run preview -- --host 0.0.0.0 --port 4173" --name sertao-frontend --cwd "../sistema de controle"
+pm2 save
+```
+
+Com isso, o backend responde em `http://SEU_SERVIDOR:3001` e o frontend em `http://SEU_SERVIDOR:4173`.
+
 # 5. Backup diário do banco
 O script [backup_controle_leite.sh](backup_controle_leite.sh) gera um dump compactado do banco `controle_leite` usando as variáveis do arquivo `.env`.
 

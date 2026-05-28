@@ -67,6 +67,53 @@ export async function initDB() {
       )
     `);
 
+    // Tabela de usuários para autenticação (sempre criada)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user',
+        is_active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Se a coluna `email` existir em instalações antigas, removê-la
+    try {
+      const [colCheck] = await db.query(
+        "SELECT COUNT(*) AS c FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'email'"
+      );
+      if (colCheck[0] && colCheck[0].c > 0) {
+        await db.query("ALTER TABLE users DROP COLUMN email");
+        console.log('Coluna `email` removida de `users`.');
+      }
+    } catch (err) {
+      console.error('Erro ao verificar/remover coluna email:', err);
+    }
+
+    // Sempre garantir que exista pelo menos um usuário admin (seed independente)
+    try {
+      const [usersCount] = await db.query("SELECT COUNT(*) AS c FROM users");
+      if (!usersCount[0] || usersCount[0].c === 0) {
+        const bcrypt = await import('bcrypt');
+        const adminUser = process.env.AUTH_USER ?? 'admin';
+        const adminPass = process.env.AUTH_PASSWORD ?? 'admin123';
+        const saltRounds = 12;
+        const hash = await bcrypt.hash(adminPass, saltRounds);
+
+        await db.query(
+          `INSERT INTO users (username, password_hash, role, is_active) VALUES (?, ?, 'admin', 1)`,
+          [adminUser, hash]
+        );
+
+        console.log(`Usuário admin '${adminUser}' criado (seed).`);
+      }
+    } catch (err) {
+      console.error('Erro ao criar usuário admin seed:', err);
+    }
+
     // Verificar se já existem dados nas tabelas (para não sobrescrever dados em produção)
     const [produtoresCount] = await db.query("SELECT COUNT(*) as count FROM produtores");
     const [coletasCount] = await db.query("SELECT COUNT(*) as count FROM coletas");
@@ -245,6 +292,27 @@ export async function initDB() {
     console.log(" Banco e tabelas verificados/criados com sucesso!");
     console.log(" Dados iniciais de produtores inseridos com sucesso!");
     console.log("Dados iniciais de coletas inseridos com sucesso!");
+
+    // Criar usuário admin inicial se ainda não existir
+    try {
+      const [usersCount] = await db.query("SELECT COUNT(*) AS c FROM users");
+      if (!usersCount[0] || usersCount[0].c === 0) {
+        const bcrypt = await import('bcrypt');
+        const adminUser = process.env.AUTH_USER ?? 'admin';
+        const adminPass = process.env.AUTH_PASSWORD ?? 'admin123';
+        const saltRounds = 12;
+        const hash = await bcrypt.hash(adminPass, saltRounds);
+
+        await db.query(
+          `INSERT INTO users (username, password_hash, role, is_active) VALUES (?, ?, 'admin', 1)`,
+          [adminUser, hash]
+        );
+
+        console.log(`Usuário admin '${adminUser}' criado (seed).`);
+      }
+    } catch (err) {
+      console.error('Erro ao criar usuário admin seed:', err);
+    }
 
   } catch (error) {
     console.error(" Erro ao inicializar banco:", error);
