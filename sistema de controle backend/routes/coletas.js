@@ -37,7 +37,10 @@ router.post("/", async (req, res) => {
   } = req.body;
   let { leite_bom_qnt = 0 } = req.body;
   if (typeof leite_bom_qnt === 'string') {
-    leite_bom_qnt = leite_bom_qnt.replace(/\./g, '').replace(',', '.');
+    leite_bom_qnt = leite_bom_qnt.replace(/\./g, '').replace(',', '.').trim();
+    if (leite_bom_qnt === '') {
+      leite_bom_qnt = 0;
+    }
   }
   if (!nome || !tanque || !data || !acidez) {
     return res.status(400).json({ message: "Nome, tanque, data e acidez são obrigatórios." });
@@ -68,7 +71,12 @@ router.put("/:id", async (req, res) => {
   let { leite_bom_qnt } = req.body;
   if (typeof leite_bom_qnt === 'string') {
     // Remove todos os pontos e troca vírgula por ponto (caso o usuário use vírgula decimal)
-    leite_bom_qnt = leite_bom_qnt.replace(/\./g, '').replace(',', '.');
+    leite_bom_qnt = leite_bom_qnt.replace(/\./g, '').replace(',', '.').trim();
+    if (leite_bom_qnt === '') {
+      leite_bom_qnt = 0;
+    }
+  } else if (leite_bom_qnt === undefined || leite_bom_qnt === null) {
+    leite_bom_qnt = 0;
   }
   // ----------------------------
 
